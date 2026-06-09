@@ -36,17 +36,23 @@ HOMEWORK_VERDICTS = {
 
 
 def send_message(vk, message):
-    """Отправляет сообщение в VK пользователю."""
-    vk.messages.send(
-        user_id=VK_USER_ID,
-        message=str(message),
-        random_id=int(time.time() * 1000)
-    )
-    logging.debug(f'Сообщение успешно отправлено в VK: {message}')
+    """Отправляет сообщение в VK пользователю VK_USER_ID."""
+    try:
+        vk.messages.send(
+            user_id=VK_USER_ID,
+            message=str(message),
+            random_id=int(time.time() * 1000)
+        )
+        logging.debug(f'Сообщение успешно отправлено в VK: {message}')
+    except Exception as error:
+        logging.error(
+            f'Ошибка отправки сообщения в VK: {error}',
+            exc_info=True
+        )
 
 
 def get_api_answer(current_timestamp):
-    """Делает запрос к эндпоинту API-сервиса."""
+    """Делает запрос к эндпоинту API-сервиса Практикума."""
     payload = {'from_date': current_timestamp}
 
     try:
@@ -119,7 +125,7 @@ def main():
             homeworks = check_response(response)
 
             if homeworks:
-                message = parse_status(homeworks[0])
+                message = parse_status(homeworks)
                 send_message(vk, message)
             else:
                 logging.info('Обновлений по домашним работам нет.')
@@ -127,20 +133,16 @@ def main():
             timestamp = response.get('current_date', timestamp)
             last_error = ''
 
+            time.sleep(RETRY_PERIOD)
+
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
 
             if message != last_error:
-                try:
-                    send_message(vk, message)
-                    last_error = message
-                except Exception as send_error:
-                    logging.error(
-                        f'Сбой при отправке сообщения об ошибке: {send_error}'
-                    )
+                send_message(vk, message)
+                last_error = message
 
-        finally:
             time.sleep(RETRY_PERIOD)
 
 
