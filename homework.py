@@ -87,7 +87,7 @@ def check_response(response):
 
 def parse_status(homework):
     """Извлекает из информации о домашней работе статус этой работы."""
-    if 'homework_name' not in homework:
+    if 'homework_name' not in homework[0]:
         raise KeyError('В словаре homework отсутствует ключ "homework_name"')
 
     homework_name = homework.get('homework_name')
@@ -143,6 +143,7 @@ def main():
                 send_message(vk, message)
                 last_error = message
 
+        finally:
             time.sleep(RETRY_PERIOD)
 
 
