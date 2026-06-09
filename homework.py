@@ -48,18 +48,18 @@ def send_message(vk, message):
 def get_api_answer(current_timestamp):
     """Делает запрос к эндпоинту API-сервиса."""
     payload = {'from_date': current_timestamp}
-    
+
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=payload)
     except requests.RequestException as error:
         raise ConnectionError(f'Ошибка при запросе к API: {error}')
-        
+
     if response.status_code != HTTPStatus.OK:
         raise ValueError(
             f'Эндпоинт {ENDPOINT} недоступен. '
             f'Код ответа: {response.status_code}'
         )
-        
+
     return response.json()
 
 
@@ -67,15 +67,15 @@ def check_response(response):
     """Проверяет ответ API на соответствие документации."""
     if not isinstance(response, dict):
         raise TypeError('Ответ API должен быть словарем')
-        
+
     if 'homeworks' not in response:
         raise ValueError('В ответе API отсутствует ключ "homeworks"')
-        
+
     homeworks = response.get('homeworks')
-    
+
     if not isinstance(homeworks, list):
         raise TypeError('Под ключом "homeworks" пришел не список')
-        
+
     return homeworks
 
 
@@ -83,13 +83,15 @@ def parse_status(homework):
     """Извлекает из информации о домашней работе статус этой работы."""
     if 'homework_name' not in homework:
         raise KeyError('В словаре homework отсутствует ключ "homework_name"')
-        
+
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
-    
+
     if homework_status not in HOMEWORK_VERDICTS:
-        raise ValueError(f'Обнаружен неизвестный статус работы: {homework_status}')
-        
+        raise ValueError(
+            f'Обнаружен неизвестный статус работы: {homework_status}'
+        )
+
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -107,7 +109,7 @@ def main():
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
-    
+
     timestamp = int(time.time())
     last_error = ''
 
@@ -115,20 +117,20 @@ def main():
         try:
             response = get_api_answer(timestamp)
             homeworks = check_response(response)
-            
+
             if homeworks:
                 message = parse_status(homeworks[0])
                 send_message(vk, message)
             else:
                 logging.info('Обновлений по домашним работам нет.')
-                
+
             timestamp = response.get('current_date', timestamp)
             last_error = ''
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(message, exc_info=True)
-            
+
             if message != last_error:
                 try:
                     send_message(vk, message)
