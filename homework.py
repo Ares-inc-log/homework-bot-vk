@@ -86,13 +86,19 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Извлекает из информации о домашней работе статус этой работы."""
-    homework = homework[0]
+    """Извлекает статус домашней работы."""
     if 'homework_name' not in homework:
-        raise KeyError('В словаре homework отсутствует ключ "homework_name"')
+        raise KeyError(
+            'В словаре homework отсутствует ключ "homework_name"'
+        )
 
-    homework_name = homework.get('homework_name')
-    homework_status = homework.get('status')
+    if 'status' not in homework:
+        raise KeyError(
+            'В словаре homework отсутствует ключ "status"'
+        )
+
+    homework_name = homework['homework_name']
+    homework_status = homework['status']
 
     if homework_status not in HOMEWORK_VERDICTS:
         raise ValueError(
@@ -100,7 +106,11 @@ def parse_status(homework):
         )
 
     verdict = HOMEWORK_VERDICTS[homework_status]
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+
+    return (
+        f'Изменился статус проверки работы "{homework_name}". '
+        f'{verdict}'
+    )
 
 
 def check_tokens():
@@ -126,15 +136,13 @@ def main():
             homeworks = check_response(response)
 
             if homeworks:
-                message = parse_status(homeworks)
+                message = parse_status(homeworks[0])
                 send_message(vk, message)
             else:
-                logging.info('Обновлений по домашним работам нет.')
+                logging.debug('Отсутствуют новые статусы.')
 
             timestamp = response.get('current_date', timestamp)
             last_error = ''
-
-            time.sleep(RETRY_PERIOD)
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
