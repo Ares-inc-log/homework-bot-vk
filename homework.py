@@ -27,6 +27,7 @@ logging.basicConfig(
     ]
 )
 
+
 # Словарь со статусами
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -36,19 +37,12 @@ HOMEWORK_VERDICTS = {
 
 
 def send_message(vk, message):
-    """Отправляет сообщение в VK пользователю VK_USER_ID."""
-    try:
-        vk.messages.send(
-            user_id=VK_USER_ID,
-            message=str(message),
-            random_id=int(time.time() * 1000)
-        )
-        logging.debug(f'Сообщение успешно отправлено в VK: {message}')
-    except Exception as error:
-        logging.error(
-            f'Ошибка отправки сообщения в VK: {error}',
-            exc_info=True
-        )
+    vk.messages.send(
+        user_id=VK_USER_ID,
+        message=str(message),
+        random_id=int(time.time() * 1000)
+    )
+    logging.debug(f'Сообщение успешно отправлено в VK: {message}')
 
 
 def get_api_answer(current_timestamp):
@@ -131,28 +125,32 @@ def main():
     last_error = ''
 
     while True:
-        try:
             response = get_api_answer(timestamp)
             homeworks = check_response(response)
 
             if homeworks:
                 message = parse_status(homeworks[0])
-                send_message(vk, message)
-            else:
-                logging.debug('Отсутствуют новые статусы.')
+
+                try:
+                    send_message(vk, message)
+                except Exception as error:
+                    logging.error(
+                        f'Ошибка отправки сообщения в VK: {error}'
+                    )
 
             timestamp = response.get('current_date', timestamp)
             last_error = ''
 
-        except Exception as error:
-            message = f'Сбой в работе программы: {error}'
-            logging.error(message, exc_info=True)
-
             if message != last_error:
-                send_message(vk, message)
+                try:
+                    send_message(vk, message)
+                except Exception as send_error:
+                    logging.error(
+                        f'Ошибка отправки сообщения в VK: {send_error}'
+                    )
+
                 last_error = message
 
-        finally:
             time.sleep(RETRY_PERIOD)
 
 
