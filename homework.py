@@ -1,5 +1,5 @@
 import logging
-import os
+# import os
 import sys
 import time
 import requests
@@ -13,9 +13,9 @@ from http import HTTPStatus
 
 # Переменные окружения
 VK_TOKEN = 'vk1.a.oFp-9yTHjnEOR6AVUmxLIySZDtz_I3ze1IFQbWyrvmGYaSq1NOTKL' \
-'jdoE_xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe' \
-'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZj1_aA' \
-'5gUi12S2G_nw4L5MbXJow'
+    'jdoE_xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe' \
+    'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZj1_aA' \
+    '5gUi12S2G_nw4L5MbXJow'
 VK_GROUP_ID = 239244542
 VK_USER_ID = 554046097
 PRACTICUM_TOKEN = 'y0__wgBENqPxZMIGJG5GCCPvvHmFygCV5pMK0ir17SIEHrIPzN2EcRGfwI'
@@ -64,7 +64,6 @@ def send_message(vk, message):
 
 def get_api_answer(current_timestamp):
     """Делает запрос к эндпоинту API-сервиса Практикума."""
-    load_dotenv()
     payload = {'from_date': current_timestamp}
 
     try:
@@ -127,7 +126,6 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    load_dotenv()
     return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
 
 
