@@ -123,13 +123,7 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    # Возвращаем True, только если ВСЕ токены заполнены
-    return all([
-        os.getenv('VK_TOKEN'),
-        os.getenv('VK_GROUP_ID'),
-        os.getenv('VK_USER_ID'),
-        os.getenv('PRACTICUM_TOKEN')
-    ])
+    return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
 
 
 def main():
@@ -137,8 +131,7 @@ def main():
     # Если check_tokens() вернул False (какого-то токена нет)
     if not check_tokens():
         logger.critical('Отсутствуют обязательные переменные окружения!')
-        # Принудительно выбрасываем исключение, чтобы тест зафиксировал ошибку
-        sys.exit('Критическая ошибка: отсутствуют переменные окружения.')
+        raise Exception('Критическая ошибка: отсутствуют токены окружения.')
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
