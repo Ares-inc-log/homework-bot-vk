@@ -123,25 +123,18 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    # Проверяем не только на пустую строку,
-    # но и на None (если переменной нет в .env)
-    env_vars = {
-        'VK_TOKEN': VK_TOKEN,
-        'VK_GROUP_ID': VK_GROUP_ID,
-        'VK_USER_ID': VK_USER_ID,
-        'PRACTICUM_TOKEN': PRACTICUM_TOKEN
-    }
-    missing_vars = [name for name, val in env_vars.items() if not val]
-    return missing_vars
+    # Возвращаем True, только если ВСЕ токены заполнены
+    return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
 
 
 def main():
     """Основная логика работы бота."""
-    missing_tokens = check_tokens()
-    if missing_tokens:
-        missing_str = ", ".join(missing_tokens)
-        logger.critical(
-            f'Отсутствуют обязательные переменные окружения: {missing_str}!'
+    # Если check_tokens() вернул False (какого-то токена нет)
+    if not check_tokens():
+        logger.critical('Отсутствуют обязательные переменные окружения!')
+        # Принудительно выбрасываем исключение, чтобы тест зафиксировал ошибку
+        raise KeyError(
+            'Критическая ошибка: отсутствуют переменные окружения.'
         )
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
