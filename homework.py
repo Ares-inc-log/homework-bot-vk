@@ -125,11 +125,11 @@ def check_tokens():
     """Проверяет доступность переменных окружения."""
     # return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
     return all([
-    os.getenv('VK_TOKEN'),
-    os.getenv('VK_GROUP_ID'),
-    os.getenv('VK_USER_ID'),
-    os.getenv('PRACTICUM_TOKEN')
-])
+        os.getenv('VK_TOKEN'),
+        os.getenv('VK_GROUP_ID'),
+        os.getenv('VK_USER_ID'),
+        os.getenv('PRACTICUM_TOKEN')
+    ])
 
 
 def main():
@@ -139,7 +139,7 @@ def main():
         logger.critical('Отсутствуют обязательные переменные окружения!')
         raise Exception('Критическая ошибка: отсутствуют токены окружения.')
 
-    vk_session = vk_api.VkApi(token=VK_TOKEN)
+    vk_session = vk_api.VkApi(token=os.getenv('VK_TOKEN'))
     vk = vk_session.get_api()
 
     # Инициализируем timestamp за последние 24 часа
