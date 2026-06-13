@@ -5,8 +5,6 @@ import time
 import requests
 import vk_api
 
-from vk_api.longpoll import VkEventType, VkLongPoll
-
 from dotenv import load_dotenv
 from http import HTTPStatus
 
@@ -49,7 +47,7 @@ HOMEWORK_VERDICTS = {
 
 
 def send_message(vk, message):
-    """Отправка сообщения пользователю"""
+    """Отправка сообщения пользователю."""
     try:
         vk.messages.send(
             user_id=VK_USER_ID,
@@ -125,7 +123,8 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    # Проверяем не только на пустую строку, но и на None (если переменной нет в .env)
+    # Проверяем не только на пустую строку,
+    # но и на None (если переменной нет в .env)
     env_vars = {
         'VK_TOKEN': VK_TOKEN,
         'VK_GROUP_ID': VK_GROUP_ID,
@@ -134,6 +133,7 @@ def check_tokens():
     }
     missing_vars = [name for name, val in env_vars.items() if not val]
     return missing_vars
+
 
 def main():
     """Основная логика работы бота."""
@@ -147,7 +147,7 @@ def main():
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
-    
+
     # Инициализируем timestamp за последние 24 часа
     current_timestamp = int(time.time()) - 86400
     last_status = ''  # Чтобы не спамить одним и тем же статусом
