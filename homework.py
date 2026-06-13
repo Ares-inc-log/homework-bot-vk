@@ -143,7 +143,7 @@ def main():
         logger.critical(
             f'Отсутствуют обязательные переменные окружения: {missing_str}!'
         )
-        raise
+        sys.exit()
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
