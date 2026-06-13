@@ -12,14 +12,14 @@ from http import HTTPStatus
 load_dotenv()
 
 # Переменные окружения
-VK_TOKEN = os.getenv('VK_TOKEN')
-VK_GROUP_ID = os.getenv('VK_GROUP_ID')
-VK_USER_ID = os.getenv('VK_USER_ID')
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+# VK_TOKEN = os.getenv('VK_TOKEN')
+# VK_GROUP_ID = os.getenv('VK_GROUP_ID')
+# VK_USER_ID = os.getenv('VK_USER_ID')
+# PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 
 # Константы проекта
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
+HEADERS = {'Authorization': f'OAuth {os.getenv('PRACTICUM_TOKEN')}'}
 RETRY_PERIOD = 600
 
 # 1. Создаем логгер и задаем уровень (например, DEBUG)
@@ -50,7 +50,7 @@ def send_message(vk, message):
     """Отправка сообщения пользователю."""
     try:
         vk.messages.send(
-            user_id=VK_USER_ID,
+            user_id=os.getenv('VK_USER_ID'),
             message=str(message),
             random_id=int(time.time() * 1000)
         )
@@ -123,7 +123,13 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
+    # return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
+    return all([
+    os.getenv('VK_TOKEN'),
+    os.getenv('VK_GROUP_ID'),
+    os.getenv('VK_USER_ID'),
+    os.getenv('PRACTICUM_TOKEN')
+])
 
 
 def main():
@@ -139,7 +145,6 @@ def main():
     # Инициализируем timestamp за последние 24 часа
     current_timestamp = int(time.time()) - 86400
     last_status = ''  # Чтобы не спамить одним и тем же статусом
-    is_first_run = True
 
     while True:
         try:
@@ -149,12 +154,9 @@ def main():
             if homeworks:
                 message = parse_status(homeworks[0])
                 # Проверяем, изменился ли статус с момента последней проверки
-                if is_first_run or message != last_status:
+                if message != last_status:
                     send_message(vk, message)
                     last_status = message
-                    is_first_run = (
-                        False  # После первой отправки выключаем флаг
-                    )
                 else:
                     logger.debug('Статус домашней работы не изменился.')
             else:
