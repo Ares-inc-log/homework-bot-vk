@@ -2,10 +2,16 @@ import logging
 import os
 import sys
 import time
-from http import HTTPStatus
-
 import requests
 import vk_api
+
+from vk_api.longpoll import VkEventType, VkLongPoll
+
+from dotenv import load_dotenv
+from http import HTTPStatus
+
+
+load_dotenv()
 
 # Переменные окружения
 VK_TOKEN = os.getenv('VK_TOKEN')
@@ -18,14 +24,20 @@ ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 RETRY_PERIOD = 600
 
-# Настройка логирования
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - [%(levelname)s] - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+# 1. Создаем логгер и задаем уровень (например, DEBUG)
+logger = logging.getLogger("my_app_logger")
+logger.setLevel(logging.DEBUG)
+
+# 2. Создаем обработчик для вывода в sys.stdout
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+
+# 3. Задаем формат вывода логов
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# 4. Добавляем обработчик к логгеру
+logger.addHandler(handler)
 
 
 # Словарь со статусами
@@ -37,12 +49,16 @@ HOMEWORK_VERDICTS = {
 
 
 def send_message(vk, message):
-    vk.messages.send(
-        user_id=VK_USER_ID,
-        message=str(message),
-        random_id=int(time.time() * 1000)
-    )
-    logging.debug(f'Сообщение успешно отправлено в VK: {message}')
+    """Отправка сообщения пользователю"""
+    try:
+        vk.messages.send(
+            user_id=VK_USER_ID,
+            message=str(message),
+            random_id=int(time.time() * 1000)
+        )
+        logger.debug(f'Сообщение успешно отправлено в VK: {message}')
+    except Exception as error:
+        logger.error(f'Ошибка отправки сообщения в VK {error}', exc_info=True)
 
 
 def get_api_answer(current_timestamp):
@@ -109,49 +125,61 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
-
+    # Проверяем не только на пустую строку, но и на None (если переменной нет в .env)
+    env_vars = {
+        'VK_TOKEN': VK_TOKEN,
+        'VK_GROUP_ID': VK_GROUP_ID,
+        'VK_USER_ID': VK_USER_ID,
+        'PRACTICUM_TOKEN': PRACTICUM_TOKEN
+    }
+    missing_vars = [name for name, val in env_vars.items() if not val]
+    return missing_vars
 
 def main():
     """Основная логика работы бота."""
-    if not check_tokens():
-        logging.critical('Отсутствуют обязательные переменные окружения!')
-        return
+    missing_tokens = check_tokens()
+    if missing_tokens:
+        missing_str = ", ".join(missing_tokens)
+        logger.critical(
+            f'Отсутствуют обязательные переменные окружения: {missing_str}!'
+        )
+        raise
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
-
-    timestamp = int(time.time())
-    last_error = ''
+    
+    # Инициализируем timestamp за последние 24 часа
+    current_timestamp = int(time.time()) - 86400
+    last_status = ''  # Чтобы не спамить одним и тем же статусом
+    is_first_run = True
 
     while True:
-            response = get_api_answer(timestamp)
+        try:
+            response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
 
             if homeworks:
                 message = parse_status(homeworks[0])
-
-                try:
+                # Проверяем, изменился ли статус с момента последней проверки
+                if is_first_run or message != last_status:
                     send_message(vk, message)
-                except Exception as error:
-                    logging.error(
-                        f'Ошибка отправки сообщения в VK: {error}'
+                    last_status = message
+                    is_first_run = (
+                        False  # После первой отправки выключаем флаг
                     )
+                else:
+                    logger.debug('Статус домашней работы не изменился.')
+            else:
+                logger.debug('В ответе нет новых домашних работ.')
 
-            timestamp = response.get('current_date', timestamp)
-            last_error = ''
+            current_timestamp = response.get('current_date', int(time.time()))
 
-            if message != last_error:
-                try:
-                    send_message(vk, message)
-                except Exception as send_error:
-                    logging.error(
-                        f'Ошибка отправки сообщения в VK: {send_error}'
-                    )
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            logger.error(message, exc_info=True)
+            send_message(vk, message)
 
-                last_error = message
-
-            time.sleep(RETRY_PERIOD)
+        time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
