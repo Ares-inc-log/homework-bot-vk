@@ -12,10 +12,10 @@ from http import HTTPStatus
 load_dotenv()
 
 # Переменные окружения
-# VK_TOKEN = os.getenv('VK_TOKEN')
-# VK_GROUP_ID = os.getenv('VK_GROUP_ID')
-# VK_USER_ID = os.getenv('VK_USER_ID')
-# PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+VK_TOKEN = os.getenv('VK_TOKEN')
+VK_GROUP_ID = os.getenv('VK_GROUP_ID')
+VK_USER_ID = os.getenv('VK_USER_ID')
+PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 
 # Константы проекта
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
