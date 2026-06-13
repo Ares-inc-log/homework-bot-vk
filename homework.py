@@ -19,7 +19,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 
 # Константы проекта
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HEADERS = {'Authorization': f'OAuth {os.getenv('PRACTICUM_TOKEN')}'}
+HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 RETRY_PERIOD = 600
 
 # 1. Создаем логгер и задаем уровень (например, DEBUG)
@@ -50,7 +50,7 @@ def send_message(vk, message):
     """Отправка сообщения пользователю."""
     try:
         vk.messages.send(
-            user_id=os.getenv('VK_USER_ID'),
+            user_id=VK_USER_ID,
             message=str(message),
             random_id=int(time.time() * 1000)
         )
@@ -61,6 +61,7 @@ def send_message(vk, message):
 
 def get_api_answer(current_timestamp):
     """Делает запрос к эндпоинту API-сервиса Практикума."""
+    load_dotenv()
     payload = {'from_date': current_timestamp}
 
     try:
@@ -123,13 +124,8 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    # return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
-    return all([
-        os.getenv('VK_TOKEN'),
-        os.getenv('VK_GROUP_ID'),
-        os.getenv('VK_USER_ID'),
-        os.getenv('PRACTICUM_TOKEN')
-    ])
+    load_dotenv()
+    return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
 
 
 def main():
@@ -139,7 +135,7 @@ def main():
         logger.critical('Отсутствуют обязательные переменные окружения!')
         raise Exception('Критическая ошибка: отсутствуют токены окружения.')
 
-    vk_session = vk_api.VkApi(token=os.getenv('VK_TOKEN'))
+    vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
 
     # Инициализируем timestamp за последние 24 часа
