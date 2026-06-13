@@ -5,17 +5,20 @@ import time
 import requests
 import vk_api
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from http import HTTPStatus
 
 
-load_dotenv()
+# load_dotenv()
 
 # Переменные окружения
-VK_TOKEN = os.getenv('VK_TOKEN')
-VK_GROUP_ID = os.getenv('VK_GROUP_ID')
-VK_USER_ID = os.getenv('VK_USER_ID')
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+VK_TOKEN = 'vk1.a.oFp-9yTHjnEOR6AVUmxLIySZDtz_I3ze1IFQbWyrvmGYaSq1NOTKL' \
+'jdoE_xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe' \
+'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZj1_aA' \
+'5gUi12S2G_nw4L5MbXJow'
+VK_GROUP_ID = 239244542
+VK_USER_ID = 554046097
+PRACTICUM_TOKEN = 'y0__wgBENqPxZMIGJG5GCCPvvHmFygCV5pMK0ir17SIEHrIPzN2EcRGfwI'
 
 # Константы проекта
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
