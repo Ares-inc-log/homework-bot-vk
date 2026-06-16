@@ -1,21 +1,20 @@
 import logging
-# import os
 import sys
 import time
 import requests
 import vk_api
 
-# from dotenv import load_dotenv
 from http import HTTPStatus
 
+from .Exceptions import NotTokens
 
-# load_dotenv()
 
 # Переменные окружения
-VK_TOKEN = 'vk1.a.oFp-9yTHjnEOR6AVUmxLIySZDtz_I3ze1IFQbWyrvmGYaSq1NOTKL' \
-    'jdoE_xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe' \
-    'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZj1_aA' \
-    '5gUi12S2G_nw4L5MbXJow'
+VK_TOKEN = ('vk1.a.oFp-9yTHjnEOR6AVUmxLIySZDtz_I3ze1IFQbWyrvmGYaSq1NOTKLjdoE_'
+            'xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe'
+            'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZ'
+            'j1_aA5gUi12S2G_nw4L5MbXJow'
+        )
 VK_GROUP_ID = 239244542
 VK_USER_ID = 554046097
 PRACTICUM_TOKEN = 'y0__wgBENqPxZMIGJG5GCCPvvHmFygCV5pMK0ir17SIEHrIPzN2EcRGfwI'
@@ -26,7 +25,7 @@ HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 RETRY_PERIOD = 600
 
 # 1. Создаем логгер и задаем уровень (например, DEBUG)
-logger = logging.getLogger("my_app_logger")
+logger = logging.getLogger('my_app_logger')
 logger.setLevel(logging.DEBUG)
 
 # 2. Создаем обработчик для вывода в sys.stdout
@@ -51,15 +50,11 @@ HOMEWORK_VERDICTS = {
 
 def send_message(vk, message):
     """Отправка сообщения пользователю."""
-    try:
-        vk.messages.send(
-            user_id=VK_USER_ID,
-            message=str(message),
-            random_id=int(time.time() * 1000)
-        )
-        logger.debug(f'Сообщение успешно отправлено в VK: {message}')
-    except Exception as error:
-        logger.error(f'Ошибка отправки сообщения в VK {error}', exc_info=True)
+    vk.messages.send(
+        user_id=VK_USER_ID,
+        message=str(message),
+        random_id=int(time.time() * 1000)
+    )
 
 
 def get_api_answer(current_timestamp):
@@ -74,7 +69,9 @@ def get_api_answer(current_timestamp):
     if response.status_code != HTTPStatus.OK:
         raise ValueError(
             f'Эндпоинт {ENDPOINT} недоступен. '
+            f'Параметры: {payload}'
             f'Код ответа: {response.status_code}'
+            f'Тело ответа: {response}'
         )
 
     return response.json()
@@ -83,15 +80,19 @@ def get_api_answer(current_timestamp):
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
     if not isinstance(response, dict):
-        raise TypeError('Ответ API должен быть словарем')
+        raise TypeError(
+            f'Ответ API должен быть словарем'
+            f'получен тип данных: {actual_type}'
+            f'фактическое значение: {repr(homeworks)}'
+        )
 
     if 'homeworks' not in response:
-        raise ValueError('В ответе API отсутствует ключ "homeworks"')
+        raise KeyError('В ответе API отсутствует ключ "homeworks"')
 
     homeworks = response.get('homeworks')
-
+    actual_type = type(homeworks).__name__
     if not isinstance(homeworks, list):
-        raise TypeError('Под ключом "homeworks" пришел не список')
+        raise TypeError(f'Под ключом "homeworks" пришел не список')
 
     return homeworks
 
@@ -126,21 +127,25 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    return all([VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN])
+    return all((VK_TOKEN, VK_GROUP_ID, VK_USER_ID, PRACTICUM_TOKEN,))
 
 
 def main():
     """Основная логика работы бота."""
     # Если check_tokens() вернул False (какого-то токена нет)
-    if not check_tokens():
+    try:
+        if not check_tokens():
+            raise NotTokens('Критическая ошибка: отсутствуют токены окружения.')
+    finally:
         logger.critical('Отсутствуют обязательные переменные окружения!')
-        raise Exception('Критическая ошибка: отсутствуют токены окружения.')
+        sys.exit()
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
 
     # Инициализируем timestamp за последние 24 часа
-    current_timestamp = int(time.time()) - 86400
+    unix_24_haurs_by_sec = 86400
+    current_timestamp = int(time.time()) - unix_24_haurs_by_sec
     last_status = ''  # Чтобы не спамить одним и тем же статусом
 
     while True:
@@ -152,19 +157,34 @@ def main():
                 message = parse_status(homeworks[0])
                 # Проверяем, изменился ли статус с момента последней проверки
                 if message != last_status:
-                    send_message(vk, message)
+                    try:
+                        send_message(vk, message)
+                        logger.debug(
+                            f'Сообщение успешно отправлено в VK: {message}'
+                        )
+                    except Exception as error:
+                        logger.error(
+                            f'Ошибка отправки сообщения в VK {error}',
+                            exc_info=True
+                        )
                     last_status = message
                 else:
                     logger.debug('Статус домашней работы не изменился.')
             else:
                 logger.debug('В ответе нет новых домашних работ.')
 
-            current_timestamp = response.get('current_date', int(time.time()))
+            current_timestamp = response.get('current_date', current_timestamp)
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message, exc_info=True)
-            send_message(vk, message)
+            # Проверяем возвращаемый результат
+            is_sent = send_message(vk, message)
+            if not is_sent:
+                logger.error(
+                    f'Уведомление в VK не было доставлено'
+                    f'(функция вернула False/None)'
+                )
 
         time.sleep(RETRY_PERIOD)
 
