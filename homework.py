@@ -11,10 +11,10 @@ from .Exceptions import NotTokens
 
 # Переменные окружения
 VK_TOKEN = ('vk1.a.oFp-9yTHjnEOR6AVUmxLIySZDtz_I3ze1IFQbWyrvmGYaSq1NOTKLjdoE_'
-            'xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe'
-            'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZ'
-            'j1_aA5gUi12S2G_nw4L5MbXJow'
-        )
+    'xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe'
+    'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZ'
+    'j1_aA5gUi12S2G_nw4L5MbXJow'
+)
 VK_GROUP_ID = 239244542
 VK_USER_ID = 554046097
 PRACTICUM_TOKEN = 'y0__wgBENqPxZMIGJG5GCCPvvHmFygCV5pMK0ir17SIEHrIPzN2EcRGfwI'
@@ -79,6 +79,8 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
+    homeworks = response.get('homeworks')
+    actual_type = type(homeworks).__name__
     if not isinstance(response, dict):
         raise TypeError(
             f'Ответ API должен быть словарем'
@@ -89,10 +91,8 @@ def check_response(response):
     if 'homeworks' not in response:
         raise KeyError('В ответе API отсутствует ключ "homeworks"')
 
-    homeworks = response.get('homeworks')
-    actual_type = type(homeworks).__name__
     if not isinstance(homeworks, list):
-        raise TypeError(f'Под ключом "homeworks" пришел не список')
+        raise TypeError('Под ключом "homeworks" пришел не список')
 
     return homeworks
 
@@ -132,58 +132,54 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-    # Если check_tokens() вернул False (какого-то токена нет)
-    try:
-        if not check_tokens():
-            raise NotTokens('Критическая ошибка: отсутствуют токены окружения.')
-    finally:
+    if not check_tokens():
         logger.critical('Отсутствуют обязательные переменные окружения!')
-        sys.exit()
+        sys.exit('Критическая ошибка: отсутствуют токены окружения.')
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk = vk_session.get_api()
 
-    # Инициализируем timestamp за последние 24 часа
-    unix_24_haurs_by_sec = 86400
-    current_timestamp = int(time.time()) - unix_24_haurs_by_sec
-    last_status = ''  # Чтобы не спамить одним и тем же статусом
+    unix_24_hours_by_sec = 86400
+    current_timestamp = int(time.time()) - unix_24_hours_by_sec
+    last_status = ''  
 
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
-
-            if homeworks:
-                message = parse_status(homeworks[0])
-                # Проверяем, изменился ли статус с момента последней проверки
-                if message != last_status:
-                    try:
-                        send_message(vk, message)
-                        logger.debug(
-                            f'Сообщение успешно отправлено в VK: {message}'
-                        )
-                    except Exception as error:
-                        logger.error(
-                            f'Ошибка отправки сообщения в VK {error}',
-                            exc_info=True
-                        )
-                    last_status = message
-                else:
-                    logger.debug('Статус домашней работы не изменился.')
-            else:
+ 
+            # Если работ нет — сразу обновляем время,
+            # спим и идем на следующий круг.
+            if not homeworks:
                 logger.debug('В ответе нет новых домашних работ.')
+                current_timestamp = response.get('current_date', current_timestamp)
+                time.sleep(RETRY_PERIOD)
+                continue
 
+            message = parse_status(homeworks[0])
+
+            if message == last_status:
+                logger.debug('Статус домашней работы не изменился.')
+                current_timestamp = response.get('current_date', current_timestamp)
+                time.sleep(RETRY_PERIOD)
+                continue
+ 
+            # Ошибка отправки теперь перехватывается
+            # общим внешним блоком except.
+            send_message(vk, message)
+            logger.debug(f'Сообщение успешно отправлено в VK: {message}')
+
+            last_status = message
             current_timestamp = response.get('current_date', current_timestamp)
 
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message, exc_info=True)
-            # Проверяем возвращаемый результат
-            is_sent = send_message(vk, message)
-            if not is_sent:
+
+            if not send_message(vk, message):
                 logger.error(
-                    f'Уведомление в VK не было доставлено'
-                    f'(функция вернула False/None)'
+                    'Уведомление в VK не было доставлено '
+                    '(функция вернула False/None)'
                 )
 
         time.sleep(RETRY_PERIOD)
