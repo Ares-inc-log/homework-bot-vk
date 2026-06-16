@@ -87,7 +87,7 @@ def check_response(response):
         raise KeyError('В ответе API отсутствует ключ "homeworks"')
 
     homeworks = response.get('homeworks')
-    
+
     # Дополнительная проверка: 'homeworks' должен быть списком
     if not isinstance(homeworks, list):
         raise TypeError('Под ключом "homeworks" ожидался список, получен тип: '
