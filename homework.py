@@ -53,6 +53,7 @@ def send_message(vk, message):
         message=str(message),
         random_id=int(time.time() * 1000)
     )
+    logger.debug(f'Сообщение успешно отправлено в VK: {message}')
 
 
 def get_api_answer(current_timestamp):
@@ -168,10 +169,14 @@ def main():
                 time.sleep(RETRY_PERIOD)
                 continue
 
-            # Ошибка отправки теперь перехватывается
-            # общим внешним блоком except.
-            send_message(vk, message)
-            logger.debug(f'Сообщение успешно отправлено в VK: {message}')
+            try:
+                send_message(vk, message)
+                last_status = message
+            except Exception as error:
+                logger.error(
+                    f'Ошибка отправки сообщения в VK {error}',
+                    exc_info=True
+                )
 
             last_status = message
             current_timestamp = response.get('current_date', current_timestamp)
