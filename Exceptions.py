@@ -1,2 +1,0 @@
-class NotTokens(Exception):
-    pass

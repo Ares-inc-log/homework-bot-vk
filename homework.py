@@ -6,15 +6,13 @@ import vk_api
 
 from http import HTTPStatus
 
-from .Exceptions import NotTokens
-
 
 # Переменные окружения
 VK_TOKEN = ('vk1.a.oFp-9yTHjnEOR6AVUmxLIySZDtz_I3ze1IFQbWyrvmGYaSq1NOTKLjdoE_'
-    'xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe'
-    'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZ'
-    'j1_aA5gUi12S2G_nw4L5MbXJow'
-)
+            'xGw8bwso4ZgVrCEzbH4KHNAFt0UwqwDPcmLSA9DEYGW3ZIS-ngPvyPuiEi1umykPe'
+            'QEBmQIEjSioUaHSS05AZrFI4afMx6oryU-fxt55lRqAXGjBsW7CGiG3RiTPcfEQkZ'
+            'j1_aA5gUi12S2G_nw4L5MbXJow'
+            )
 VK_GROUP_ID = 239244542
 VK_USER_ID = 554046097
 PRACTICUM_TOKEN = 'y0__wgBENqPxZMIGJG5GCCPvvHmFygCV5pMK0ir17SIEHrIPzN2EcRGfwI'
@@ -147,12 +145,15 @@ def main():
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
- 
+
             # Если работ нет — сразу обновляем время,
             # спим и идем на следующий круг.
             if not homeworks:
                 logger.debug('В ответе нет новых домашних работ.')
-                current_timestamp = response.get('current_date', current_timestamp)
+                current_timestamp = response.get(
+                    'current_date',
+                    current_timestamp
+                )
                 time.sleep(RETRY_PERIOD)
                 continue
 
@@ -160,10 +161,13 @@ def main():
 
             if message == last_status:
                 logger.debug('Статус домашней работы не изменился.')
-                current_timestamp = response.get('current_date', current_timestamp)
+                current_timestamp = response.get(
+                    'current_date',
+                    current_timestamp
+                    )
                 time.sleep(RETRY_PERIOD)
                 continue
- 
+
             # Ошибка отправки теперь перехватывается
             # общим внешним блоком except.
             send_message(vk, message)
