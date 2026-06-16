@@ -78,20 +78,20 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
-    homeworks = response.get('homeworks')
-    actual_type = type(homeworks).__name__
     if not isinstance(response, dict):
-        raise TypeError(
-            f'Ответ API должен быть словарем'
-            f'получен тип данных: {actual_type}'
-            f'фактическое значение: {repr(homeworks)}'
-        )
+        raise TypeError('Ответ API должен быть словарем, получен тип: '
+                        f'{type(response).__name__}')
 
+    # Проверка наличия ключа 'homeworks'
     if 'homeworks' not in response:
         raise KeyError('В ответе API отсутствует ключ "homeworks"')
 
+    homeworks = response.get('homeworks')
+    
+    # Дополнительная проверка: 'homeworks' должен быть списком
     if not isinstance(homeworks, list):
-        raise TypeError('Под ключом "homeworks" пришел не список')
+        raise TypeError('Под ключом "homeworks" ожидался список, получен тип: '
+                        f'{type(homeworks).__name__}')
 
     return homeworks
 
