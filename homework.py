@@ -139,7 +139,7 @@ def main():
 
     unix_24_hours_by_sec = 86400
     current_timestamp = int(time.time()) - unix_24_hours_by_sec
-    last_status = ''  
+    last_status = ''
 
     while True:
         try:
@@ -164,7 +164,7 @@ def main():
                 current_timestamp = response.get(
                     'current_date',
                     current_timestamp
-                    )
+                )
                 time.sleep(RETRY_PERIOD)
                 continue
 
